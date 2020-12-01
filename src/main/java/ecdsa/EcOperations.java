@@ -28,15 +28,18 @@ public class EcOperations {
     public static BigInteger[] pointAddition(BigInteger[] p1, BigInteger[] p2, BigInteger n) {
         BigInteger[] val = new BigInteger[2];
 
-        BigInteger a = (p2[1].subtract(p1[1]));
-        BigInteger b = (p2[0].subtract(p1[0]));
-        b = b.modInverse(n);
-        a = a.multiply(b).mod(n);
-        b = a.multiply(a);
-        b = ((b.subtract(p1[0])).subtract(p2[0])).mod(n);
-        val[0] = b;
+        BigInteger xp = p1[0];
+        BigInteger yp = p1[1];
 
-        val[1] = (a.multiply(p1[0].subtract(b))).subtract(p1[1]).mod(n);
+        BigInteger xq = p2[0];
+        BigInteger yq = p2[1];
+
+        BigInteger m = (yp.subtract(yq)).multiply(xp.subtract(xq).modInverse(n)).mod(n);
+        BigInteger xr = m.pow(2).subtract(xp).subtract(xq).mod(n);
+        BigInteger yr = m.multiply(xp.subtract(xr)).subtract(yp).mod(n);
+
+        val[0] = xr;
+        val[1] = yr;
 
         return val;
     }
@@ -49,14 +52,16 @@ public class EcOperations {
     public static BigInteger[] pointDoubling(BigInteger[] p1, BigInteger n, BigInteger a) {
         BigInteger[] val = new BigInteger[2];
 
-        BigInteger i = p1[0].multiply(p1[0]).multiply(BigInteger.valueOf(3)).add(a);
-        BigInteger j = (p1[1].multiply(BigInteger.valueOf(2))).modInverse(n);
-        i = (i.multiply(j)).mod(n);
-        j = i.multiply(i);
-        j = (j.subtract(p1[0].multiply(BigInteger.valueOf(2)))).mod(n);
-        val[0] = j;
+        BigInteger xp = p1[0];
+        BigInteger yp = p1[1];
 
-        val[1] = (i.multiply(p1[0].subtract(j))).subtract(p1[1]).mod(n);
+        BigInteger m = xp.pow(2).multiply(BigInteger.valueOf(3)).add(a).multiply(yp.multiply(BigInteger.valueOf(2)).modInverse(n)).mod(n);
+
+        BigInteger xr = m.pow(2).subtract(xp).subtract(xp).mod(n);
+        BigInteger yr = m.multiply(xp.subtract(xr)).subtract(yp).mod(n);
+
+        val[0] = xr;
+        val[1] = yr;
 
         return val;
     }
@@ -73,7 +78,6 @@ public class EcOperations {
         boolean set = false;
         String binMult = mult.toString(2);
         int binMultLen = binMult.length();
-
 
         for (int c=binMultLen-1; c>= 0; c--) {
             // System.out.print("|"+c+"|");
