@@ -46,14 +46,16 @@ public class KeccakF implements SpongeFunction {
     private long[][] lanesPrime;
 
     /**
-     * LFSR seed
-     */
-    private static byte rSeed = (byte)0x80;
-
-    /**
      * LFSR state R for iota
      */
     private byte r;
+
+    /**
+     * LFSR seed
+     *
+     * This is the state of r before it rolls back to 0x01.
+     */
+    private static byte rSeed = (byte)0xb8;
 
     /**
      * Initialise a zeroed state
@@ -91,62 +93,19 @@ public class KeccakF implements SpongeFunction {
     }
 
     /**
-     * Serialise state to bytes
-     */
-    @Override
-    public void serialise(byte[] out) {
-        int i = 0;
-        for (int y = 0; y < 5; ++y) {
-            for (int x = 0; x < 5; ++x) {
-                long lane = lanes[y][x];
-                out[i++] = (byte)((lane >> 56) & 0xff);
-                out[i++] = (byte)((lane >> 48) & 0xff);
-                out[i++] = (byte)((lane >> 40) & 0xff);
-                out[i++] = (byte)((lane >> 32) & 0xff);
-                out[i++] = (byte)((lane >> 24) & 0xff);
-                out[i++] = (byte)((lane >> 16) & 0xff);
-                out[i++] = (byte)((lane >>  8) & 0xff);
-                out[i++] = (byte)((lane      ) & 0xff);
-            }
-        }
-    }
-
-    /**
-     * Deserialise bytes to state
-     */
-    @Override
-    public void deserialise(final byte[] in) {
-        int i = 0;
-        for (int y = 0; y < 5; ++y) {
-            for (int x = 0; x < 5; ++x) {
-                long lane;
-                lane =               (in[i++] & 0xff);
-                lane = (lane << 8) | (in[i++] & 0xff);
-                lane = (lane << 8) | (in[i++] & 0xff);
-                lane = (lane << 8) | (in[i++] & 0xff);
-                lane = (lane << 8) | (in[i++] & 0xff);
-                lane = (lane << 8) | (in[i++] & 0xff);
-                lane = (lane << 8) | (in[i++] & 0xff);
-                lane = (lane << 8) | (in[i++] & 0xff);
-            }
-        }
-    }
-
-    /**
      * XOR the bytes p (as a bit string) into the first bitlen(p) bits
      * of state.
      */
     @Override
     public void xorIn(final byte[] p) {
         int len = p.length;
-        int x = 0, y = 0;
-        int nz = W - 8; // bit position
+        int x = 0, y = 0, z = 0; // bit position
         long lane = 0;
         for (int i = 0; i < len; ++i) {
-            lane |= ((long)p[i] & 0xff) << nz;
-            if ((nz -= 8) < 0) {
+            lane |= ((long)p[i] & 0xff) << z;
+            if ((z += 8) == W) {
                 lanes[y][x] ^= lane;
-                nz = W - 8;
+                z = 0;
                 lane = 0;
                 if ((x += 1) == 5) {
                     x = 0;
@@ -154,7 +113,7 @@ public class KeccakF implements SpongeFunction {
                 }
             }
         }
-        if (nz < W-8) {
+        if (z > 0) {
             lanes[y][x] ^= lane;
         }
     }
@@ -164,13 +123,12 @@ public class KeccakF implements SpongeFunction {
      */
     @Override
     public void extract(int nbytes, byte[] out) {
-        int x = 0, y = 0;
-        int nz = W - 8; // bit position
+        int x = 0, y = 0, z = 0;
         long lane = lanes[y][x];
         for (int i = 0; i < nbytes; ++i) {
-            out[i] = (byte)((lane >> nz) & 0xff);
-            if ((nz -= 8) < 0) {
-                nz = W - 8;
+            out[i] = (byte)((lane >> z) & 0xff);
+            if ((z += 8) == W) {
+                z = 0;
                 if ((x += 1) == 5) {
                     x = 0;
                     y += 1;
@@ -195,7 +153,7 @@ public class KeccakF implements SpongeFunction {
         for (int x = 0; x < 5; ++x) {
             long prev = cPlane[(x+4) % 5];
             long next = cPlane[(x+1) % 5];
-            next = (next >>> 1) | (next << (W - 1));
+            next = (next << 1) | (next >>> (W - 1));
             dPlane[x] = prev ^ next;
         }
         // Apply
@@ -210,7 +168,7 @@ public class KeccakF implements SpongeFunction {
      */
     private void rot(int x, int y, int amount) {
         long l = lanes[y][x];
-        l = (l >>> amount) | (l << (W - amount));
+        l = (l << amount) | (l >>> (W - amount));
         lanes[y][x] = l;
     }
 
@@ -253,6 +211,11 @@ public class KeccakF implements SpongeFunction {
      * Pi step function
      */
     private void pi() {
+        /*
+        System.out.println
+            (String.format(" PI: A=%x A'=%x", System.identityHashCode(lanes),
+                           System.identityHashCode(lanesPrime)));
+        */
         for (int y = 0; y < 5; ++y) {
             for (int x = 0; x < 5; ++x)
                 lanesPrime[y][x] = lanes[x][(x + 3*y) % 5];
@@ -260,13 +223,23 @@ public class KeccakF implements SpongeFunction {
         // Swap buffers
         long[][] temp = lanes;
         lanes = lanesPrime;
-        lanesPrime = lanes;
+        lanesPrime = temp;
+        /*
+        System.out.println
+            (String.format(" PI: A=%x A'=%x", System.identityHashCode(lanes),
+                           System.identityHashCode(lanesPrime)));
+        */
     }
 
     /**
      * Chi step function
      */
     private void chi() {
+        /*
+        System.out.println
+            (String.format(" CHI: A=%x A'=%x", System.identityHashCode(lanes),
+                           System.identityHashCode(lanesPrime)));
+        */
         for (int y = 0; y < 5; ++y) {
             for (int x = 0; x < 5; ++x) {
                 long xorlane = (~lanes[y][(x+1) % 5]) & lanes[y][(x+2) % 5];
@@ -276,16 +249,21 @@ public class KeccakF implements SpongeFunction {
         // Swap buffers
         long[][] temp = lanes;
         lanes = lanesPrime;
-        lanesPrime = lanes;
+        lanesPrime = temp;
+        /*
+        System.out.println
+            (String.format(" CHI: A=%x A'=%x", System.identityHashCode(lanes),
+                           System.identityHashCode(lanesPrime)));
+        */
     }
 
     /**
      * LFSR calculation
      */
     private long nextRc() {
-        int c = r & 1;
-        r >>>= 1;
-        r ^= -c & 0x8e;
+        int c = (r >>> 7) & 1;
+        r <<= 1;
+        r ^= -c & 0x71;
         return c;
     }
 
@@ -294,14 +272,24 @@ public class KeccakF implements SpongeFunction {
      */
     private void iota() {
         long rc;
-        rc  = nextRc() << 63;
-        rc |= nextRc() << 62;
-        rc |= nextRc() << 60;
-        rc |= nextRc() << 56;
-        rc |= nextRc() << 48;
-        rc |= nextRc() << 32;
-        rc |= nextRc();
+        rc  = nextRc();
+        rc |= nextRc() <<  1;
+        rc |= nextRc() <<  3;
+        rc |= nextRc() <<  7;
+        rc |= nextRc() << 15;
+        rc |= nextRc() << 31;
+        rc |= nextRc() << 63;
         lanes[0][0] ^= rc;
+    }
+
+    void dumpState() {
+        for (int i = 0; i < 24; i += 2) {
+            System.out.println
+                (String.format
+                 ("  %016x %016x", lanes[i/5][i%5], lanes[(i+1)/5][(i+1)%5]));
+        }
+        System.out.println(String.format("  %016x", lanes[4][4]));
+        System.out.println();
     }
 
     /**
@@ -310,11 +298,17 @@ public class KeccakF implements SpongeFunction {
      * Round number is implicit in how many times iota() has been called.
      */
     private void rnd() {
+        //dumpState();
         theta();
+        //dumpState();
         rho();
+        //dumpState();
         pi();
+        //dumpState();
         chi();
+        //dumpState();
         iota();
+        //dumpState();
     }
 
     /**
@@ -323,7 +317,9 @@ public class KeccakF implements SpongeFunction {
     @Override
     public void f() {
         r = rSeed; // Start from round 0
-        for (int i = 0; i < NR; ++i)
+        for (int i = 0; i < NR; ++i) {
+            //System.out.println(String.format("Round %d\n", i));
             rnd();
+        }
     }
 }

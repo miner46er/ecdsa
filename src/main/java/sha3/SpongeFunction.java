@@ -15,20 +15,6 @@ public interface SpongeFunction {
     public void zeroiseState();
 
     /**
-     * Serialise the entire state to bytes
-     *
-     * out *must* be sized appropriately.
-     */
-    public void serialise(byte[] out);
-
-    /**
-     * Deserialise a state from bytes
-     *
-     * There must be enough bytes to fill the state.
-     */
-    public void deserialise(final byte[] in);
-
-    /**
      * XOR the bytes p (as a bit string) into the first bitlen(p) bits
      * of state.
      */

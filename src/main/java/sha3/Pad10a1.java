@@ -14,8 +14,9 @@ public class Pad10a1 implements PaddingRule {
         int outbytes = outbits / 8;
         assert outbytes > 0;
         byte[] output = new byte[outbytes];
-        output[0] = (byte)0x80; // 0b1...
-        output[outbytes - 1] |= 0x01; // ...0b1
+        // Note endianness: leftmost bit is LSB!
+        output[0] = (byte)0x01; // 0b1...
+        output[outbytes - 1] |= 0x80; // ...0b1
         return output;
     }
 }

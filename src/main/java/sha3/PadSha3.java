@@ -14,11 +14,14 @@ public class PadSha3 implements PaddingRule {
         int outbytes = outbits / 8;
         assert outbytes > 0;
         byte[] output = new byte[outbytes];
+        /*
         System.err.println
             (String.format("x=%d m=%d j=%d obits=%d obytes=%d",
                            x, m, j, outbits, outbytes));
-        output[0] = (byte)0x60; // 0b011...
-        output[outbytes - 1] |= 0x01; // ...0b1
+        */
+        // Note endianness: leftmost bit is LSB!
+        output[0] = (byte)0x06; // 0b011...
+        output[outbytes - 1] |= 0x80; // ...0b1
         return output;
     }
 }
