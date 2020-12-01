@@ -11,20 +11,18 @@ import java.util.Formatter;
  */
 public class Signature {
 
-    public static BigInteger[] messageSign(String msg, BigInteger n, BigInteger[] G, BigInteger a, BigInteger privateKey) throws NoSuchAlgorithmException {
+    public static BigInteger[] messageSign(String msg, BigInteger n, BigInteger p, BigInteger[] G, BigInteger a, BigInteger privateKey) throws NoSuchAlgorithmException {
 
         BigInteger k, kInv, r, e, s, z;
         BigInteger[] kG;
 
-//        e = new BigInteger(SHAsum(msg.getBytes()), 16);
-        e = new BigInteger("1B376F0B735C615CEEEB31BAEE654B0A374825DB", 16);
+        e = new BigInteger(SHAsum(msg.getBytes()), 16);
         z = e.shiftRight(e.bitLength() - n.bitLength());
 
         do {
             do {
-//                k = BigIntUtils.randomNumberLessThan(p);
-                k = new BigInteger("D06CB0A0EF2F708B0744F08AA06B6DEEDEA9C0F80A69D847", 16);
-                kG = EcOperations.pointMultiply(G, Constants.p, a, k);
+                k = BigIntUtils.randomNumberLessThan(p);
+                kG = EcOperations.pointMultiply(G, p, a, k);
                 r = kG[0].mod(n);
             } while (r.compareTo(BigInteger.ZERO) == 0);
 
@@ -40,7 +38,7 @@ public class Signature {
         return kG;
     }
 
-    public static boolean messageVerify(String msg, BigInteger[] sign, BigInteger n, BigInteger[] G, BigInteger a, BigInteger[] pbkQ) throws NoSuchAlgorithmException {
+    public static boolean messageVerify(String msg, BigInteger[] sign, BigInteger n, BigInteger p, BigInteger[] G, BigInteger a, BigInteger[] pbkQ) throws NoSuchAlgorithmException {
 
         BigInteger r = sign[0];
         BigInteger s = sign[1];
@@ -61,7 +59,7 @@ public class Signature {
         BigInteger u1 = z.multiply(sInv).mod(n);
         BigInteger u2 = r.multiply(sInv).mod(n);
 
-        BigInteger[] X = EcOperations.pointAddition(EcOperations.pointMultiply(G, Constants.p, a, u1), EcOperations.pointMultiply(pbkQ, Constants.p, a, u2), Constants.p);
+        BigInteger[] X = EcOperations.pointAddition(EcOperations.pointMultiply(G, p, a, u1), EcOperations.pointMultiply(pbkQ, p, a, u2), p);
 
         if(X[0].equals(BigInteger.ZERO) || X[1].equals(BigInteger.ZERO) ){
             System.out.println("Invalid !");

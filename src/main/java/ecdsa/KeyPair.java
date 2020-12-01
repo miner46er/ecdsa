@@ -14,8 +14,7 @@ public class KeyPair {
 
 
     public KeyPair(BigInteger[] point, BigInteger p, BigInteger a) {
-//        privateKey = BigIntUtils.randomNumberLessThan(p);
-        privateKey = new BigInteger("7891686032FD8057F636B44B1F47CCE564D2509923A7465B", 16);
+        privateKey = BigIntUtils.randomNumberLessThan(p);
         publicKey = EcOperations.pointMultiply(point, p, a, privateKey);
     }
 
