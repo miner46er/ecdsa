@@ -10,6 +10,7 @@ public class Constants {
 
     // for curve p192
     public static String Curve = "p192";
+    public static BigInteger p = new BigInteger("6277101735386680763835789423207666416083908700390324961279");
     public static BigInteger n = new BigInteger("6277101735386680763835789423176059013767194773182842284081");
     public static BigInteger xG = new BigInteger("188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012", 16);
     public static BigInteger yG = new BigInteger("07192b95ffc8da78631011ed6b24cdd573f977a11e794811", 16);

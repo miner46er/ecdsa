@@ -13,7 +13,12 @@ public class Main {
         //message to sign
         String msg = "this is the formula of coca cola";
         //get a random key pair
-        KeyPair kp = new KeyPair(Constants.xyG, Constants.n, Constants.a);
+        KeyPair kp = new KeyPair(Constants.xyG, Constants.p, Constants.a);
+
+        System.out.println("Private key: " + kp.getPrivateKey().toString(16));
+
+        System.out.println("Public key x: " + kp.getPublicKey()[0].toString(16));
+        System.out.println("Public key y: " + kp.getPublicKey()[1].toString(16));
 
         //sign the message and get signature
         BigInteger[] signature = Signature.messageSign(msg, Constants.n, Constants.xyG, Constants.a, kp.getPrivateKey());

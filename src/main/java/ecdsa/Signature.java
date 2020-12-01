@@ -16,17 +16,23 @@ public class Signature {
         BigInteger k, kInv, r, e, s, z;
         BigInteger[] kG;
 
+//        e = new BigInteger(SHAsum(msg.getBytes()), 16);
+        e = new BigInteger("1B376F0B735C615CEEEB31BAEE654B0A374825DB", 16);
+        z = e.shiftRight(e.bitLength() - n.bitLength());
+
         do {
             do {
-                k = BigIntUtils.randomNumberLessThan(n);
-                kG = EcOperations.pointMultiply(G, n, a, k);
+//                k = BigIntUtils.randomNumberLessThan(p);
+                k = new BigInteger("D06CB0A0EF2F708B0744F08AA06B6DEEDEA9C0F80A69D847", 16);
+                kG = EcOperations.pointMultiply(G, Constants.p, a, k);
                 r = kG[0].mod(n);
             } while (r.compareTo(BigInteger.ZERO) == 0);
 
             kInv = k.modInverse(n);
-            e = new BigInteger(SHAsum(msg.getBytes()), 16);
-            z = e.shiftRight(e.bitLength() - n.bitLength());
-            s = (kInv.multiply(z.add(privateKey.multiply(r)))).mod(n);
+
+            s = kInv.multiply(z.add(r.multiply(privateKey))).mod(n);
+
+//            System.out.println("s :" + s.toString(16));
         } while (s.compareTo(BigInteger.ZERO) == 0);
 
         kG[0] = r;
@@ -49,13 +55,13 @@ public class Signature {
         }
 
         BigInteger e = new BigInteger(SHAsum(msg.getBytes()), 16);
-        BigInteger z = z = e.shiftRight(e.bitLength() - n.bitLength());
-        BigInteger w = s.modInverse(n);
+        BigInteger z = e.shiftRight(e.bitLength() - n.bitLength());
+        BigInteger sInv = s.modInverse(n);
 
-        BigInteger u1 = (z.multiply(w)).mod(n);
-        BigInteger u2 = (r.multiply(w)).mod(n);
+        BigInteger u1 = z.multiply(sInv).mod(n);
+        BigInteger u2 = r.multiply(sInv).mod(n);
 
-        BigInteger[] X = EcOperations.pointAddition(EcOperations.pointMultiply(G, n, a, u1), EcOperations.pointMultiply(pbkQ, n, a, u2), n);
+        BigInteger[] X = EcOperations.pointAddition(EcOperations.pointMultiply(G, Constants.p, a, u1), EcOperations.pointMultiply(pbkQ, Constants.p, a, u2), Constants.p);
 
         if(X[0].equals(BigInteger.ZERO) || X[1].equals(BigInteger.ZERO) ){
             System.out.println("Invalid !");
@@ -70,8 +76,6 @@ public class Signature {
         System.out.println("Message NOT VERIFIED");
         return false;
     }
-
-
 
     public static String SHAsum(byte[] convertme) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("SHA-512");
