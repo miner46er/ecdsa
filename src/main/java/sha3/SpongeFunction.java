@@ -21,9 +21,10 @@ public interface SpongeFunction {
     public void xorIn(final byte[] p);
 
     /**
-     * Extract the first 8*nbytes bits of state into the array out.
+     * Extract the first 8*nbytes bits of state into the array out starting
+     * at offset.
      */
-    public void extract(int nbytes, byte[] out);
+    public void extract(int nbytes, int offset, byte[] out);
 
     /**
      * Permute the state

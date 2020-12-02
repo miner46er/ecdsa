@@ -38,7 +38,14 @@ public class Sponge {
         System.arraycopy(padding, 0, block, bPartial, padding.length);
         f.xorIn(block);
         f.f();
-        f.extract(d / 8, out);
+        int i = 0;
+        while (d > r) {
+            f.extract(rBytes, i, out);
+            i += rBytes;
+            d -= r;
+        }
+        if (d > 0)
+            f.extract(d / 8, i, out);
         f.zeroiseState();
     }
 }

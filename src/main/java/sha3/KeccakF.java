@@ -119,14 +119,15 @@ public class KeccakF implements SpongeFunction {
     }
 
     /**
-     * Extract the first 8*nbytes bits of state into the array out.
+     * Extract the first 8*nbytes bits of state into the array out starting
+     * at offset.
      */
     @Override
-    public void extract(int nbytes, byte[] out) {
+    public void extract(int nbytes, int offset, byte[] out) {
         int x = 0, y = 0, z = 0;
         long lane = lanes[y][x];
         for (int i = 0; i < nbytes; ++i) {
-            out[i] = (byte)((lane >> z) & 0xff);
+            out[offset + i] = (byte)((lane >> z) & 0xff);
             if ((z += 8) == W) {
                 z = 0;
                 if ((x += 1) == 5) {
