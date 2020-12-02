@@ -1,5 +1,7 @@
 package ecdsa;
 
+import sha3.Sha3;
+
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -30,7 +32,6 @@ public class Signature {
 
             s = kInv.multiply(z.add(r.multiply(privateKey))).mod(n);
 
-//            System.out.println("s :" + s.toString(16));
         } while (s.compareTo(BigInteger.ZERO) == 0);
 
         kG[0] = r;
@@ -75,11 +76,10 @@ public class Signature {
         return false;
     }
 
-    public static String SHAsum(byte[] convertme) throws NoSuchAlgorithmException {
-        MessageDigest md = MessageDigest.getInstance("SHA-512");
-        return byteArray2Hex(md.digest(convertme));
+    public static String SHAsum(byte[] convertMe) throws NoSuchAlgorithmException {
+        Sha3 sha3 = new Sha3(256);
+        return byteArray2Hex(sha3.digest(convertMe));
     }
-
 
     private static String byteArray2Hex(final byte[] hash) {
         Formatter formatter = new Formatter();
